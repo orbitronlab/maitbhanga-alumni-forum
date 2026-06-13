@@ -1,0 +1,620 @@
+// Prisma Schema for Maitbhanga High School Alumni Forum
+// Updated: 2026-06-13
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  ALUMNI
+  GUEST
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  REJECTED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+  POSTPONED
+}
+
+enum EventType {
+  REUNION
+  SEMINAR
+  FUNDRAISER
+  SPORTS
+  CULTURAL
+  OTHER
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  CONFIRMED
+  CANCELLED
+  ATTENDED
+}
+
+enum DonationType {
+  MEMBERSHIP_FEE
+  EVENT_FEE
+  GENERAL_DONATION
+  DEVELOPMENT_FUND
+  CAMPAIGN_DONATION
+}
+
+enum PaymentMethod {
+  BKASH
+  NAGAD
+  SSLCOMMERZ
+  BANK_TRANSFER
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum MessageType {
+  BROADCAST
+  BATCH
+  INDIVIDUAL
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  ARCHIVED
+}
+
+enum NotificationType {
+  SYSTEM
+  PAYMENT
+  EVENT
+  MESSAGE
+  ANNOUNCEMENT
+  MEMBERSHIP
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PAYMENT
+  APPROVE
+  REJECT
+  EXPORT
+}
+
+// ─────────────────────────────────────────────
+// USERS TABLE
+// ─────────────────────────────────────────────
+
+model User {
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  emailVerified      DateTime?
+  password           String?
+  role               UserRole           @default(ALUMNI)
+  status             UserStatus         @default(PENDING)
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  loginAttempts      Int                @default(0)
+  lastLoginAt        DateTime?
+  lastLoginIp        String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  deletedAt          DateTime?
+
+  // Relations
+  profile            Profile?
+  accounts           Account[]
+  sessions           Session[]
+  donations          Donation[]
+  eventRegistrations EventRegistration[]
+  sentMessages       Message[]           @relation("SentMessages")
+  receivedMessages   MessageRecipient[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]          @relation("AuditUser")
+  createdNews        News[]
+  createdEvents      Event[]             @relation("EventCreator")
+  createdCampaigns   Campaign[]
+  verificationTokens VerificationToken[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// PROFILES TABLE
+// ─────────────────────────────────────────────
+
+model Profile {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  fullName            String
+  nameInBangla        String?
+  gender              Gender?
+  dateOfBirth         DateTime?
+  phone               String?
+  altPhone            String?
+  profilePhoto        String?
+  bio                 String?
+  batchId             String?
+  rollNumber          String?
+  passingYear         Int?
+  currentAddress      String?
+  permanentAddress    String?
+  city                String?
+  country             String?   @default("Bangladesh")
+  profession          String?
+  company             String?
+  designation         String?
+  workAddress         String?
+  facebookUrl         String?
+  linkedinUrl         String?
+  twitterUrl          String?
+  websiteUrl          String?
+  isLifeMember        Boolean   @default(false)
+  memberSince         DateTime?
+  membershipExpiresAt DateTime?
+  achievements        String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batch AlumniBatch? @relation(fields: [batchId], references: [id])
+
+  @@map("profiles")
+}
+
+// ─────────────────────────────────────────────
+// ALUMNI BATCHES TABLE
+// ─────────────────────────────────────────────
+
+model AlumniBatch {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "SSC 2005"
+  year        Int      @unique
+  description String?
+  coverImage  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  profiles Profile[]
+
+  @@map("alumni_batches")
+}
+
+// ─────────────────────────────────────────────
+// EVENTS TABLE
+// ─────────────────────────────────────────────
+
+model Event {
+  id               String      @id @default(cuid())
+  title            String
+  slug             String      @unique
+  description      String
+  shortDescription String?
+  type             EventType   @default(OTHER)
+  status           EventStatus @default(DRAFT)
+  startDate        DateTime
+  endDate          DateTime
+  location         String?
+  onlineLink       String?
+  maxAttendees     Int?
+  currentAttendees Int         @default(0)
+  coverImage       String?
+  gallery          String[]    @default([])
+  registrationFee  Decimal?    @db.Decimal(10, 2)
+  currency         String      @default("BDT")
+  isFeatured       Boolean     @default(false)
+  isPublic         Boolean     @default(true)
+  requiresPayment  Boolean     @default(false)
+  createdById      String
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  deletedAt        DateTime?
+
+  // Relations
+  createdBy     User                @relation("EventCreator", fields: [createdById], references: [id])
+  registrations EventRegistration[]
+  donations     Donation[]
+
+  @@map("events")
+}
+
+// ─────────────────────────────────────────────
+// EVENT REGISTRATIONS TABLE
+// ─────────────────────────────────────────────
+
+model EventRegistration {
+  id           String             @id @default(cuid())
+  userId       String
+  eventId      String
+  status       RegistrationStatus @default(REGISTERED)
+  ticketNumber String             @unique @default(cuid())
+  checkInAt    DateTime?
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  payment Payment?
+
+  @@unique([userId, eventId])
+  @@map("event_registrations")
+}
+
+// ─────────────────────────────────────────────
+// CAMPAIGNS TABLE
+// ─────────────────────────────────────────────
+
+model Campaign {
+  id          String         @id @default(cuid())
+  title       String
+  slug        String         @unique
+  description String
+  goal        Decimal        @db.Decimal(12, 2)
+  raised      Decimal        @default(0) @db.Decimal(12, 2)
+  currency    String         @default("BDT")
+  coverImage  String?
+  status      CampaignStatus @default(DRAFT)
+  startDate   DateTime
+  endDate     DateTime?
+  isFeatured  Boolean        @default(false)
+  createdById String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  createdBy User       @relation(fields: [createdById], references: [id])
+  donations Donation[]
+
+  @@map("campaigns")
+}
+
+// ─────────────────────────────────────────────
+// DONATIONS TABLE
+// ─────────────────────────────────────────────
+
+model Donation {
+  id            String       @id @default(cuid())
+  userId        String
+  type          DonationType @default(GENERAL_DONATION)
+  amount        Decimal      @db.Decimal(12, 2)
+  currency      String       @default("BDT")
+  campaignId    String?
+  eventId       String?
+  message       String?
+  isAnonymous   Boolean      @default(false)
+  receiptNumber String       @unique @default(cuid())
+  receiptUrl    String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign Campaign? @relation(fields: [campaignId], references: [id])
+  event    Event?    @relation(fields: [eventId], references: [id])
+  payment  Payment?
+
+  @@map("donations")
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS TABLE
+// ─────────────────────────────────────────────
+
+model Payment {
+  id                   String        @id @default(cuid())
+  donationId           String?       @unique
+  eventRegistrationId  String?       @unique
+  method               PaymentMethod
+  status               PaymentStatus @default(PENDING)
+  amount               Decimal       @db.Decimal(12, 2)
+  currency             String        @default("BDT")
+  gatewayTransactionId String?       @unique
+  gatewayResponse      Json?
+  verificationData     Json?
+  failureReason        String?
+  paidAt               DateTime?
+  refundedAt           DateTime?
+  refundAmount         Decimal?      @db.Decimal(12, 2)
+  metadata             Json?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  // Relations
+  donation          Donation?          @relation(fields: [donationId], references: [id])
+  eventRegistration EventRegistration? @relation(fields: [eventRegistrationId], references: [id])
+
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────
+// MESSAGES TABLE
+// ─────────────────────────────────────────────
+
+model Message {
+  id          String      @id @default(cuid())
+  senderId    String
+  subject     String
+  body        String
+  type        MessageType @default(INDIVIDUAL)
+  batchIds    String[]    @default([])
+  attachments String[]    @default([])
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  sender     User               @relation("SentMessages", fields: [senderId], references: [id])
+  recipients MessageRecipient[]
+
+  @@map("messages")
+}
+
+model MessageRecipient {
+  id        String        @id @default(cuid())
+  messageId String
+  userId    String
+  status    MessageStatus @default(SENT)
+  readAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@map("message_recipients")
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATIONS TABLE
+// ─────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType @default(SYSTEM)
+  title     String
+  body      String
+  link      String?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────
+// NEWS TABLE
+// ─────────────────────────────────────────────
+
+model News {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  content     String
+  excerpt     String?
+  coverImage  String?
+  category    String        @default("general")
+  tags        String[]      @default([])
+  status      ContentStatus @default(DRAFT)
+  isFeatured  Boolean       @default(false)
+  isNotice    Boolean       @default(false)
+  viewCount   Int           @default(0)
+  publishedAt DateTime?
+  createdById String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@map("news")
+}
+
+// ─────────────────────────────────────────────
+// GALLERY TABLE
+// ─────────────────────────────────────────────
+
+model Gallery {
+  id           String    @id @default(cuid())
+  title        String
+  description  String?
+  mediaUrl     String
+  thumbnailUrl String?
+  mediaType    MediaType @default(PHOTO)
+  albumId      String?
+  tags         String[]  @default([])
+  eventId      String?
+  isPublic     Boolean   @default(true)
+  isFeatured   Boolean   @default(false)
+  sortOrder    Int       @default(0)
+  uploadedById String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  album GalleryAlbum? @relation(fields: [albumId], references: [id])
+
+  @@map("gallery")
+}
+
+model GalleryAlbum {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  coverImage  String?
+  eventId     String?
+  isPublic    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  items Gallery[]
+
+  @@map("gallery_albums")
+}
+
+// ─────────────────────────────────────────────
+// SETTINGS TABLE
+// ─────────────────────────────────────────────
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  type      String   @default("string")
+  group     String   @default("general")
+  label     String?
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// ─────────────────────────────────────────────
+// AUDIT LOGS TABLE
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String?
+  action     AuditAction
+  entityType String?
+  entityId   String?
+  oldData    Json?
+  newData    Json?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+
+  // Relations
+  user User? @relation("AuditUser", fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────
+// NEXTAUTH TABLES
+// ─────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  type      String   @default("email")
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("verification_tokens")
+}
