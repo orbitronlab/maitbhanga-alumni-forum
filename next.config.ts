@@ -1,6 +1,13 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Skip type checking and linting during production build (run separately in CI)
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
