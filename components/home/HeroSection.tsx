@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, Users, Award, MapPin, Play } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { HomeLangToggle } from '@/components/ui/HomeLangToggle';
 
 export function HeroSection() {
   const { t } = useLanguage();
@@ -13,6 +14,11 @@ export function HeroSection() {
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-hero" />
+
+      {/* Top right language toggle */}
+      <div className="absolute top-24 right-4 md:right-8 lg:right-12 z-50">
+        <HomeLangToggle />
+      </div>
 
       {/* Decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
