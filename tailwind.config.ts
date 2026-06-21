@@ -84,6 +84,7 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         heading: ['var(--font-outfit)', 'system-ui', 'sans-serif'],
+        noto: ['var(--font-noto)', 'serif'],
       },
       borderRadius: {
         lg: 'var(--radius)',

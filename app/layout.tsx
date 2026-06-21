@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
-import { Inter, Outfit } from 'next/font/google';
+import { Inter, Outfit, Noto_Serif_Bengali } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { Toaster } from 'react-hot-toast';
-import { LanguageProvider } from '@/lib/i18n/LanguageContext';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -15,6 +14,13 @@ const outfit = Outfit({
   subsets: ['latin'],
   variable: '--font-outfit',
   display: 'swap',
+});
+
+const notoSerifBengali = Noto_Serif_Bengali({
+  subsets: ['bengali'],
+  variable: '--font-noto',
+  display: 'swap',
+  weight: ['400', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -57,11 +63,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${outfit.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${outfit.variable} ${notoSerifBengali.variable} font-sans antialiased`}>
         <Providers>
-          <LanguageProvider>
           {children}
-          </LanguageProvider>
           <Toaster
             position="top-right"
             toastOptions={{

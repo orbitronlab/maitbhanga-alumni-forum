@@ -2,53 +2,31 @@
 
 import { motion } from 'framer-motion';
 import { Users, GraduationCap, Heart, CalendarDays, Globe, TrendingUp } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
-const stats = [
-  {
-    icon: Users,
-    value: '5,000+',
-    label: 'Registered Alumni',
-    description: 'Members from across Bangladesh and worldwide',
-    color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
-  },
-  {
-    icon: GraduationCap,
-    value: '35+',
-    label: 'Alumni Batches',
-    description: 'From 1990 to present, all batches represented',
-    color: 'text-primary bg-primary/5 dark:bg-primary/10',
-  },
-  {
-    icon: Heart,
-    value: '৳12.7L+',
-    label: 'Total Donations',
-    description: 'Raised for school development and scholarships',
-    color: 'text-accent-600 bg-accent/10 dark:bg-accent/10',
-  },
-  {
-    icon: CalendarDays,
-    value: '50+',
-    label: 'Events Organized',
-    description: 'Reunions, seminars, and cultural events',
-    color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20',
-  },
-  {
-    icon: Globe,
-    value: '15+',
-    label: 'Countries',
-    description: 'Alumni living and working across the globe',
-    color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20',
-  },
-  {
-    icon: TrendingUp,
-    value: '250+',
-    label: 'Life Members',
-    description: 'Committed lifelong supporters of our school',
-    color: 'text-rose-600 bg-rose-50 dark:bg-rose-900/20',
-  },
+const statIcons = [Users, GraduationCap, Heart, CalendarDays, Globe, TrendingUp];
+const statColors = [
+  'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
+  'text-primary bg-primary/5 dark:bg-primary/10',
+  'text-accent-600 bg-accent/10 dark:bg-accent/10',
+  'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20',
+  'text-purple-600 bg-purple-50 dark:bg-purple-900/20',
+  'text-rose-600 bg-rose-50 dark:bg-rose-900/20',
 ];
 
 export function StatsSection() {
+  const { t } = useLanguage();
+  const s = t.stats;
+
+  const stats = [
+    { icon: statIcons[0], value: '5,000+', label: s.registered, color: statColors[0] },
+    { icon: statIcons[1], value: '35+', label: s.activeBatches, color: statColors[1] },
+    { icon: statIcons[2], value: '৳12.7L+', label: s.raised, color: statColors[2] },
+    { icon: statIcons[3], value: '50+', label: s.events, color: statColors[3] },
+    { icon: statIcons[4], value: '15+', label: s.countries, color: statColors[4] },
+    { icon: statIcons[5], value: '250+', label: s.lifeMem, color: statColors[5] },
+  ];
+
   return (
     <section className="section-padding bg-white dark:bg-background">
       <div className="page-container">
@@ -59,11 +37,8 @@ export function StatsSection() {
           transition={{ duration: 0.6 }}
           className="section-header"
         >
-          <h2>Our Growing Community</h2>
-          <p>
-            A proud network of alumni spanning decades, industries, and continents — all
-            united by Maitbhanga High School.
-          </p>
+          <h2>{s.title}</h2>
+          <p>{s.subtitle}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -81,7 +56,6 @@ export function StatsSection() {
               </div>
               <p className="text-3xl font-bold font-heading text-foreground mb-1">{stat.value}</p>
               <p className="font-semibold text-foreground mb-1">{stat.label}</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">{stat.description}</p>
             </motion.div>
           ))}
         </div>
